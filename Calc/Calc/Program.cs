@@ -16,11 +16,11 @@ char operand;
 
 LinkedList<string> parsed_input = new LinkedList<string>();
 
-// ToDo: všechno
+Console.Clear(); // to clear console if it was closed with Ctrl C last time
 
 do
 {
-    Console.Write("zadejte operaci mezi celými čísli a operátory +, -, /, *: ");
+    Console.Write("enter operation with whole numbers and following operands +, -, /, *: ");
 
     parsed_input.Clear();
 
@@ -98,6 +98,7 @@ do
         }
         Console.WriteLine("your output is {0}", sum);
         validInput = true;
+        Console.WriteLine("to exit this program press Ctrl C");
     }
 }
-while (!validInput);
+while (true); // originaly it was "while (!validInput);" but requirements exist
