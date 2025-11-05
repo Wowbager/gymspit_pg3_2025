@@ -4,7 +4,7 @@ string input;
 
 bool validInput = false;
 
-string parsedNum;
+string parsedNum = "";
 
 string validOperators = "+-/*";
 
@@ -16,89 +16,145 @@ char operand;
 
 LinkedList<string> parsed_input = new LinkedList<string>();
 
-Console.Clear(); // to clear console if it was closed with Ctrl C last time
+Console.Clear();
 
 do
 {
-    Console.Write("enter operation with whole numbers and following operands +, -, /, *: ");
+    ClearVariables(ref parsedNum, ref parsed_input);
 
-    parsed_input.Clear();
+    input = GetInput();
 
-    input = Console.ReadLine() ?? string.Empty;
+    ParseInput(input, ref parsedNum, ref parsed_input, validNums, validOperators, out tmpNum);
 
-    parsedNum = "";
-
-    for (int i = 0; i < input.Length; i++)
+    if (!ProcessParsedInput(ref parsedNum, ref parsed_input, out tmpNum))
     {
-        if ((parsedNum == "" && input[i] == '-') || (validNums.Contains(input[i])))
-        {
-            parsedNum += input[i];
-        }
-        else if (validOperators.Contains(input[i]))
-        {
-            if (parsedNum == "")
-            {
-                Console.WriteLine("found operand {0} without number before it at position {1}", input[i], i);
-            }
-
-            if (int.TryParse(parsedNum, out tmpNum))
-            {
-                parsed_input.AddLast(parsedNum);
-                parsed_input.AddLast(input[i].ToString());
-                parsedNum = "";
-            }
-        }
-    }
-
-    if (parsed_input.Count() == 0) {
         Console.WriteLine("couldn't parse equation");
     }
     else
     {
-        if (parsedNum == "" || !(int.TryParse(parsedNum, out tmpNum)))
-        {
-            Console.WriteLine("found trailing operand, ignoring it");
-            parsed_input.RemoveLast();
-        }
-        else
-        {
-            parsed_input.AddLast(parsedNum);
-        }
-
-        int.TryParse(parsed_input.First(), out sum);
-        parsed_input.RemoveFirst();
-        operand = ' ';
-
-        foreach (string element in parsed_input)
-        {
-            if (operand == ' ')
-            {
-                operand = element[0];
-            }
-            else
-            {
-                int.TryParse(element, out tmpNum);
-                switch (operand)
-                {
-                    case '+':
-                        sum += tmpNum;
-                        break;
-                    case '-':
-                        sum -= tmpNum;
-                        break;
-                    case '*':
-                        sum *= tmpNum;
-                        break;
-                    case '/':
-                        sum = sum / tmpNum;
-                        break;
-                }
-                operand = ' ';
-            }
-        }
+        sum = CalculateResult(parsed_input, out operand);
         Console.WriteLine("your output is {0}", sum);
         validInput = true;
         Console.WriteLine("to exit this program press Ctrl C");
     }
 }
-while (true); // originaly it was "while (!validInput);" but requirements exist
+while (true);
+
+
+string GetInput()
+{
+    Console.Write("enter operation with whole numbers and following operands +, -, /, *: ");
+
+    return Console.ReadLine() ?? string.Empty;
+}
+
+void ClearVariables(ref string parsedNum, ref LinkedList<string> parsed_input)
+{
+    parsed_input.Clear();
+    parsedNum = "";
+}
+
+void ParseInput(string input, ref string parsedNum, ref LinkedList<string> parsed_input, string validNums, string validOperators, out int tmpNum)
+{
+    tmpNum = 0;
+
+    for (int i = 0; i < input.Length; i++)
+    {
+        if (IsValidNumberChar(parsedNum, input[i], validNums))
+        {
+            parsedNum += input[i];
+        }
+        else if (validOperators.Contains(input[i]))
+        {
+            HandleOperator(input[i], i, ref parsedNum, ref parsed_input, out tmpNum);
+        }
+    }
+}
+
+bool IsValidNumberChar(string parsedNum, char currentChar, string validNums)
+{
+    return (parsedNum == "" && currentChar == '-') || validNums.Contains(currentChar);
+}
+
+void HandleOperator(char operatorChar, int position, ref string parsedNum, ref LinkedList<string> parsed_input, out int tmpNum)
+{
+    tmpNum = 0;
+
+    if (parsedNum == "")
+    {
+        Console.WriteLine("found operand {0} without number before it at position {1}", operatorChar, position);
+    }
+
+    if (int.TryParse(parsedNum, out tmpNum))
+    {
+        parsed_input.AddLast(parsedNum);
+        parsed_input.AddLast(operatorChar.ToString());
+        parsedNum = "";
+    }
+}
+
+bool ProcessParsedInput(ref string parsedNum, ref LinkedList<string> parsed_input, out int tmpNum)
+{
+    tmpNum = 0;
+
+    if (parsed_input.Count() == 0)
+    {
+        return false;
+    }
+
+    if (parsedNum == "" || !(int.TryParse(parsedNum, out tmpNum)))
+    {
+        Console.WriteLine("found trailing operand, ignoring it");
+        parsed_input.RemoveLast();
+    }
+    else
+    {
+        parsed_input.AddLast(parsedNum);
+    }
+
+    return true;
+}
+
+int CalculateResult(LinkedList<string> parsed_input, out char operand)
+{
+    int sum;
+    int tmpNum;
+
+    int.TryParse(parsed_input.First(), out sum);
+    parsed_input.RemoveFirst();
+    operand = ' ';
+
+    foreach (string element in parsed_input)
+    {
+        if (operand == ' ')
+        {
+            operand = element[0];
+        }
+        else
+        {
+            sum = ApplyOperation(sum, operand, element, out tmpNum);
+            operand = ' ';
+        }
+    }
+
+    return sum;
+}
+
+int ApplyOperation(int sum, char operand, string element, out int tmpNum)
+{
+    int.TryParse(element, out tmpNum);
+
+    switch (operand)
+    {
+        case '+':
+            return sum + tmpNum;
+        case '-':
+            return sum - tmpNum;
+        case '*':
+            return sum * tmpNum;
+        case '/':
+            return sum / tmpNum;
+        default:
+            return sum;
+    }
+}
